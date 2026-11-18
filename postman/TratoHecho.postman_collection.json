@@ -1,0 +1,344 @@
+{
+  "info": {
+    "name": "Trato Hecho - Backend",
+    "description": "Colección base para probar los cuatro microservicios. Ejecutar login y copiar accessToken a la variable accessToken.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "identityUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "customersUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "commercialUrl",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "billingUrl",
+      "value": "http://localhost:8084"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "quoteId",
+      "value": ""
+    },
+    {
+      "key": "taxId",
+      "value": ""
+    },
+    {
+      "key": "invoiceId",
+      "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@tratohecho.local"
+    },
+    {
+      "key": "adminPassword",
+      "value": "CambiarEstaClave123!"
+    },
+    {
+      "key": "customerCreateKey",
+      "value": "9b8af2b0-0d9f-4cb6-8e6d-0ec7c27a0001"
+    },
+    {
+      "key": "quoteCreateKey",
+      "value": "9b8af2b0-0d9f-4cb6-8e6d-0ec7c27a0002"
+    }
+  ],
+  "item": [
+    {
+      "name": "Identidad",
+      "item": [
+        {
+          "name": "Login administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{identityUrl}}/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "Mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{identityUrl}}/api/v1/auth/me"
+          }
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{identityUrl}}/api/v1/usuarios"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Crear cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) pm.collectionVariables.set('customerId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{customerCreateKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Comercial del Sur SpA\",\n  \"rut\": \"76.123.456-7\",\n  \"contactName\": \"María González\",\n  \"email\": \"contacto@comercialdelsur.cl\",\n  \"phone\": \"+56 9 1234 5678\",\n  \"address\": \"Concepción, Chile\",\n  \"notes\": \"Cliente de prueba\"\n}"
+            },
+            "url": "{{customersUrl}}/api/v1/clientes"
+          }
+        },
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{customersUrl}}/api/v1/clientes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comercial",
+      "item": [
+        {
+          "name": "Crear impuesto IVA 19%",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) pm.collectionVariables.set('taxId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IVA\",\n  \"rate\": 19,\n  \"active\": true\n}"
+            },
+            "url": "{{commercialUrl}}/api/v1/impuestos"
+          }
+        },
+        {
+          "name": "Crear cotización",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) pm.collectionVariables.set('quoteId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{quoteCreateKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"currency\": \"CLP\",\n  \"validUntil\": \"2026-12-15\",\n  \"notes\": \"Cotización Postman\",\n  \"items\": [\n    {\n      \"itemName\": \"Servicio de instalación\",\n      \"description\": \"Instalación inicial\",\n      \"quantity\": 1,\n      \"unitPrice\": 150000,\n      \"taxId\": \"{{taxId}}\"\n    }\n  ]\n}"
+            },
+            "url": "{{commercialUrl}}/api/v1/cotizaciones"
+          }
+        },
+        {
+          "name": "Marcar cotización enviada",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"ENVIADA\"}"
+            },
+            "url": "{{commercialUrl}}/api/v1/cotizaciones/{{quoteId}}/estado"
+          }
+        },
+        {
+          "name": "Marcar cotización aceptada",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"ACEPTADA\"}"
+            },
+            "url": "{{commercialUrl}}/api/v1/cotizaciones/{{quoteId}}/estado"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Facturación",
+      "item": [
+        {
+          "name": "Crear registro de factura desde cotización aceptada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) pm.collectionVariables.set('invoiceId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quoteId\": \"{{quoteId}}\",\n  \"issuedDate\": \"2026-11-16\",\n  \"dueDate\": \"2026-12-16\",\n  \"notes\": \"Registro interno de facturación\"\n}"
+            },
+            "url": "{{billingUrl}}/api/v1/facturas"
+          }
+        },
+        {
+          "name": "Listar facturas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{billingUrl}}/api/v1/facturas"
+          }
+        }
+      ]
+    }
+  ]
+}
