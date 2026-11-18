@@ -92,20 +92,6 @@ Con el bootstrap habilitado, el servicio de identidad crea un tenant de demostra
 
 No se almacena una contraseña de administrador fija en el código. Cambia las credenciales de ejemplo antes de compartir o desplegar el proyecto.
 
-## 4. Ejecución local sin Docker
-
-Inicia primero MySQL 8.4 y crea las cuatro bases de datos con `docker/init-databases.sql`. Al usar el puerto publicado por el Compose, configura `DB_URL` con `localhost:3307`.
-
-En terminales separadas, desde la raíz:
-
-```bash
-./gradlew :identity-service:bootRun
-./gradlew :customers-service:bootRun
-./gradlew :commercial-service:bootRun
-./gradlew :billing-service:bootRun
-```
-
-En Windows utiliza `gradlew.bat`. Define en el entorno de cada proceso `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` y el mismo `JWT_SECRET`. En identidad también define las variables `BOOTSTRAP_*` para crear el primer usuario.
 
 ## 5. Seguridad y aislamiento por empresa
 
@@ -217,8 +203,6 @@ Ejemplo de cotización:
 }
 ```
 
-`catalogItemId` es opcional: si se informa, debe ser un ítem activo del tenant y puede omitirse `itemName`/`unitPrice` para tomar nombre y precio por defecto. Si no se usa catálogo, informa `itemName` y `unitPrice`. `taxId` es opcional; sin impuesto asociado la tasa aplicada es 0%. Si se informa, debe pertenecer al tenant y estar activo. La cotización verifica el cliente consultando `customers-service` con el mismo Bearer token. Las monedas admitidas en esta versión son `CLP`, `USD` y `UF`.
-
 Estados y transiciones permitidas:
 
 - `BORRADOR` → `ENVIADA`.
@@ -292,10 +276,6 @@ El monto y la moneda se obtienen desde `commercial-service`; no se aceptan monto
 
 Estos endpoints administran **registros internos de facturación**. No emiten factura electrónica tributaria ni reemplazan una integración autorizada con el SII.
 
-## 7. API externa de indicadores económicos
-
-No existe endpoint de indicadores en este backend. Android debe conservar un cliente Retrofit independiente para la API externa seleccionada por el proyecto (USD/UF), mostrar esos valores en la interfaz y manejar sus errores/indisponibilidad separadamente de los datos y servicios propios.
-
 ## 8. Códigos HTTP y errores
 
 El manejador común devuelve, para errores de validación y negocio, una estructura como esta:
@@ -325,53 +305,8 @@ El manejador común devuelve, para errores de validación y negocio, una estruct
 
 Cada servicio expone Swagger UI en `/swagger-ui.html` y OpenAPI JSON en `/v3/api-docs`.
 
-## 9. Pruebas
 
-Ejecuta todos los tests:
 
-```bash
-./gradlew test
-```
 
-Genera reportes JaCoCo:
 
-```bash
-./gradlew test jacocoTestReport
-```
 
-Reportes HTML:
-
-- `identity-service/build/reports/jacoco/test/html/index.html`
-- `customers-service/build/reports/jacoco/test/html/index.html`
-- `commercial-service/build/reports/jacoco/test/html/index.html`
-- `billing-service/build/reports/jacoco/test/html/index.html`
-
-Hay pruebas unitarias de JWT, búsqueda de clientes, cálculo de cotizaciones y transiciones de estados. **No se declara una cobertura del 80% alcanzada**: debe medirse ejecutando el reporte y, además, la rúbrica pide pruebas en ViewModel/Repository de la aplicación móvil. Esa parte se implementará al adaptar Android.
-
-## 10. Integración Android (siguiente etapa)
-
-Android deberá configurar cuatro instancias Retrofit (una por base URL) y enviar el Bearer token en las operaciones protegidas. Para el emulador Android estándar, las direcciones locales de host son `http://10.0.2.2:8081/`, `:8082/`, `:8083/` y `:8084/`. En un dispositivo físico utiliza la IP LAN del computador que ejecuta Docker, siempre que la red permita la conexión.
-
-Para los envíos offline de clientes y cotizaciones:
-
-1. Mantén el UUID local de la operación.
-2. En el primer intento de creación usa ese UUID como valor de `Idempotency-Key`.
-3. Si la solicitud queda sin respuesta y se reintenta, repite la misma clave.
-4. Marca como sincronizado solo cuando el servidor responda exitosamente.
-5. Para un `409`, muestra el conflicto y evita reemplazar datos locales silenciosamente.
-
-Los endpoints `PUT` actualizan recursos existentes; no uses `POST` para editar. Los IDs de las respuestas son UUID y deben guardarse en Room para futuras modificaciones.
-
-## 11. Limitaciones y verificación previa a entrega
-
-- El backend define contratos propuestos a partir de la planificación de Trato Hecho y los módulos descritos en este repositorio. Antes de conectarlo, hay que cotejar los nombres/campos con la matriz Excel de requerimientos y los formularios finales de Android.
-- Los nombres exactos de perfiles operativos deben confirmarse con el caso; esta versión define `ADMIN`, `VENDEDOR` y `FACTURACION` como perfiles de trabajo.
-- Los catálogos e impuestos se crean por administración; no se carga automáticamente un catálogo real ni una tasa tributaria predefinida.
-- La facturación modelada es interna, no tributaria.
-- Las llamadas entre servicios propagan el token del usuario y validan el tenant mediante el servicio destino.
-- La sincronización offline se maneja en Android; el backend aporta idempotencia a las altas de clientes y cotizaciones.
-- Para producción aún se deben agregar TLS, secretos administrados, respaldos, monitoreo, rotación de claves y políticas operacionales específicas.
-
-## 12. GitHub y trabajo colaborativo
-
-Sube este backend como repositorio separado del proyecto Android. No publiques `.env`, contraseñas reales ni claves JWT. El `.env.example` sí es seguro como plantilla local. Mantén commits por funcionalidad (identidad, clientes, comercial, facturación, pruebas, documentación) y distribuye las tareas en Trello de acuerdo con los integrantes del equipo.
